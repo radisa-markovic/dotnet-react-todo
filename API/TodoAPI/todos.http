@@ -1,0 +1,35 @@
+@baseUrl = http://localhost:5100/api/v1
+
+GET {{baseUrl}}/todos
+
+###
+
+GET {{baseUrl}}/todos/2
+
+###
+
+POST {{baseUrl}}/todos/
+Content-Type: application/json
+
+{
+    "title": "Izes mi carape",
+    "description": "Svakog dana treba izesti carape.",
+    "isCompleted": false,
+    "createdAt": "2024-06-01"
+}
+
+###
+
+PUT {{baseUrl}}/todos/2
+Content-Type: application/json
+
+{
+    "title": "Izes mi carape",
+    "description": "Svakog dana treba izesti carape.",
+    "isCompleted": true,
+    "completedAt": "2024-06-02"
+}  
+
+###
+
+DELETE {{baseUrl}}/todos/1
