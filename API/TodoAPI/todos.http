@@ -8,14 +8,12 @@ GET {{baseUrl}}/todos/2
 
 ###
 
-POST {{baseUrl}}/todos/
+POST {{baseUrl}}/todos
 Content-Type: application/json
 
 {
     "title": "Izes mi carape",
-    "description": "Svakog dana treba izesti carape.",
-    "isCompleted": false,
-    "createdAt": "2024-06-01"
+    "description": "Svakog dana treba izesti carape."
 }
 
 ###
@@ -29,6 +27,15 @@ Content-Type: application/json
     "isCompleted": true,
     "completedAt": "2024-06-02"
 }  
+
+###
+
+PATCH {{baseUrl}}/todos/1/complete
+Content-Type: application/json
+
+{
+    "isComplete": false
+}
 
 ###
 

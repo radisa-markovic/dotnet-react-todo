@@ -10,6 +10,10 @@ export default function Navigation()
         {
             path: "/todos",
             caption: "Todos"
+        },
+        {
+            path: "/todos/new",
+            caption: "New Todo"
         }
     ];
 

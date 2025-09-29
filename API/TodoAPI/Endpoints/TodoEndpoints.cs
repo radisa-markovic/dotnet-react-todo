@@ -7,8 +7,11 @@ namespace TodoAPI.Endpoints;
 
 public static class TodoEndpoints
 {
+
     public static RouteGroupBuilder MapTodoEndpoints(this WebApplication app)
     {
+        string GetTodoRoute = "GetTodoRoute";
+        
         var todoRouteGroup = app.MapGroup("/api/v1/todos")
             .WithParameterValidation();
 
@@ -22,21 +25,23 @@ public static class TodoEndpoints
         {
             var todo = await dbContext.Todos.FirstOrDefaultAsync(todo => todo.Id == id);
             return todo is not null ? Results.Ok(todo) : Results.NotFound();
-        });
+        }).WithName(GetTodoRoute);
 
         todoRouteGroup.MapPost("/", async (CreateTodoDto todo, TodoContext dbContext) =>
         {
-            Todo newTodo = new() {
+            Todo newTodo = new()
+            {
                 Title = todo.Title,
                 Description = todo.Description,
-                IsCompleted = todo.IsCompleted,
-                CreatedAt = todo.CreatedAt
+                IsCompleted = false,
+                CreatedAt = DateOnly.FromDateTime(DateTime.Now),
+                CompletedAt = null
             };
 
             await dbContext.Todos.AddAsync(newTodo);
             await dbContext.SaveChangesAsync();
 
-            return Results.CreatedAtRoute($"/{newTodo.Id}", todo);
+            return Results.CreatedAtRoute(GetTodoRoute, new { id = newTodo.Id }, newTodo);
         });
 
         todoRouteGroup.MapPut("/{id}", async (
@@ -56,6 +61,21 @@ public static class TodoEndpoints
             await dbContext.SaveChangesAsync();
 
             return Results.Ok();
+        });
+
+        todoRouteGroup.MapPatch("/{id}/complete", async (int id, ToggleTodoCompleteDto isComplete, TodoContext dbContext) =>
+        {
+            var isCompletedValue = isComplete.IsCompleted;
+            var todoForCompletion = await dbContext
+                .Todos
+                .Where(todo => todo.Id == id)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(todo => todo.IsCompleted, isCompletedValue)
+                    .SetProperty(todo => todo.CompletedAt, isCompletedValue ? DateOnly.FromDateTime(DateTime.Now) : null)
+                );
+            await dbContext.SaveChangesAsync();
+
+            return Results.NoContent();
         });
 
         todoRouteGroup.MapDelete("/{id}", async (int id, TodoContext dbContext) =>
