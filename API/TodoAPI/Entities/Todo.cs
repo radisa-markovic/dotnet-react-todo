@@ -19,4 +19,7 @@ public class Todo
     [Required]
     public DateOnly CreatedAt { get; set; }
     public DateOnly? CompletedAt { get; set; }
+
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
 }

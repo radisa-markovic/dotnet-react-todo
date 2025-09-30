@@ -9,7 +9,22 @@ public static class DataExtensions
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TodoContext>();
         dbContext.Database.Migrate();
-        TodosGenerator todosGenerator = new TodosGenerator();
-        todosGenerator.SeedTodos(dbContext, 10);
+
+        if (!dbContext.Users.Any())
+        {
+            FakeDataGenerator usersGenerator = new FakeDataGenerator();
+            var fakeUsers = usersGenerator.GenerateUsers(5);
+            dbContext.Users.AddRange(fakeUsers);
+            dbContext.SaveChanges();
+        }
+
+        if (!dbContext.Todos.Any())
+        {
+            FakeDataGenerator todosGenerator = new FakeDataGenerator();
+            var fakeUsers = dbContext.Users.Take(5).ToList(); ;
+            var fakeTodos = todosGenerator.GenerateFakeTodos(10, fakeUsers);
+            dbContext.Todos.AddRange(fakeTodos);
+            dbContext.SaveChanges();
+        }        
     }
 }

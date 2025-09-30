@@ -9,6 +9,10 @@ builder.Services.AddOpenDoorCorsPolicy();
 
 var app = builder.Build();
 app.UseOpenDoorCorsPolicy();
+
 app.MapTodoEndpoints();
-// app.MigrateDatabase();
+app.MapUsersEndpoints();
+
+app.MigrateDatabase();
+
 app.Run();

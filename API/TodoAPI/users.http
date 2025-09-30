@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5100/api/v1/users
+
+GET {{baseUrl}}/
+
+###
+
+POST {{baseUrl}}/
+Content-Type: application/json
+
+{
+  "username": "djoka",
+  "password": "Tandrcak"
+}
+
+###
+
+DELETE {{baseUrl}}/1
