@@ -1,4 +1,5 @@
 using Bogus;
+using Microsoft.AspNetCore.Identity;
 using TodoAPI.Entities;
 
 namespace TodoAPI.Data;
@@ -16,9 +17,13 @@ public class FakeDataGenerator
 
     public List<User> GenerateUsers(int count)
     {
+        string simplePassword = "senegal";
+        var passwordHasher = new PasswordHasher<User>();
+        string hashedPassword = passwordHasher.HashPassword(null!, simplePassword);
+
         this.usersFaker
             .RuleFor((user) => user.Username, (faker) => faker.Internet.UserName())
-            .RuleFor((user) => user.Password, (faker) => faker.Internet.Password())
+            .RuleFor((user) => user.Password, (_) => hashedPassword)
             .RuleFor((user) => user.CreatedAt, (faker) => faker.Date.PastDateOnly());
 
         return this.usersFaker.Generate(count);

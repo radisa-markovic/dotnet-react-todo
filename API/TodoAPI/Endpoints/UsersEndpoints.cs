@@ -1,8 +1,10 @@
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TodoAPI.Data;
 using TodoAPI.Dtos.Users;
 using TodoAPI.Entities;
+using TodoAPI.ServiceExtensions;
 
 namespace TodoAPI.Endpoints;
 
@@ -11,8 +13,11 @@ public static class UsersEndpoints
     public static void MapUsersEndpoints(this WebApplication app)
     {
         var hasher = new PasswordHasher<User>();
-        
-        var users = app.MapGroup("/api/v1/users");
+        var jwtSecretKey = "your_super_secret_key_1234567890"; // Keep secure!
+        var key = Encoding.ASCII.GetBytes(jwtSecretKey);
+
+        var users = app.MapGroup("/api/v1/users")
+            .WithParameterValidation();
 
         users.MapGet("/", async (TodoContext dbContext) =>
         {
@@ -59,5 +64,38 @@ public static class UsersEndpoints
         })
         .WithName("DeleteUser")
         .WithTags("Users");
+    
+        users.MapPost("/login", (
+            UserLoginDto loginData,
+            IConfiguration config,
+            TodoContext dbContext
+        ) =>
+        {
+            if(string.IsNullOrWhiteSpace(loginData.Username))
+                return Results.BadRequest("Username is required.");
+
+            var user = dbContext
+                .Users
+                .Where((dbUser) => dbUser.Username == loginData.Username)
+                .FirstOrDefault();
+
+            if(user is null)
+                return Results.NotFound();
+
+            var passwordHasher = new PasswordHasher<User>();
+            var passwordCheckResult = passwordHasher.VerifyHashedPassword(
+                user,
+                user.Password,
+                loginData.Password
+            );
+
+            if(passwordCheckResult == PasswordVerificationResult.Failed)
+                return Results.Unauthorized();
+
+            var accessToken = JWTGenerator.GenerateToken(loginData, config);
+
+            return Results.Ok(new { token = accessToken });
+        });
     }
+    
 }
