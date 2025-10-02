@@ -1,5 +1,7 @@
-import { Form, type ClientActionFunctionArgs } from "react-router";
+import { useFetcher } from "react-router";
 import type Todo from "../models/Todo";
+import { useAuth } from "../contexts/AuthContext";
+import { useState } from "react";
 
 const TITLE_KEY_NAME = "title";
 const DESCRIPTION_KEY_NAME = "description";
@@ -12,11 +14,38 @@ interface TodoFormProps
 
 function TodoForm({ todo }: TodoFormProps)
 {
+    const [title, setTitle] = useState<string>('');
+    const [description, setDescription] = useState<string>('');
+    const { accessToken } = useAuth();
+
+    async function onCreateTodo(event: any)
+    {
+        event.preventDefault();
+        const todo: Partial<Todo> = { 
+            title, 
+            description,  
+        };
+
+        const baseUrl = import.meta.env.VITE_API_BASE_URL;
+        
+        const response = await fetch(`${baseUrl}/todos`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            },
+            body: JSON.stringify(todo),
+        });
+
+        const data = await response.json();
+        console.log(data);
+    }
+    
     return (
-        <Form 
+        <form 
             className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
             method="post"
-            action={todo ? `/todos/edit/${todo.id}` : "/todos/new"}
+            onSubmit={(event) => onCreateTodo(event)}
         >
             <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
@@ -29,6 +58,7 @@ function TodoForm({ todo }: TodoFormProps)
                     placeholder="Enter todo title"
                     name={TITLE_KEY_NAME}
                     defaultValue={todo?.title ?? ""}
+                    onChange={(event) => setTitle(event.target.value)}
                 />
             </div>
             <div className="mb-4">
@@ -41,6 +71,7 @@ function TodoForm({ todo }: TodoFormProps)
                     placeholder="Enter description"
                     name={DESCRIPTION_KEY_NAME}
                     rows={3}
+                    onChange={(event) => setDescription(event.target.value)}
                 >{ todo && todo.description }</textarea>
             </div>
            <div className="flex items-center justify-between">
@@ -51,30 +82,8 @@ function TodoForm({ todo }: TodoFormProps)
                     { todo? "Edit" : "Add" } Todo
                 </button>
             </div>
-        </Form>
+        </form>
     );
-}
-
-export async function createTodo({ request } : any)
-{
-    const formData = await request.formData();
-    const title = formData.get(TITLE_KEY_NAME) as string;
-    const description = formData.get(DESCRIPTION_KEY_NAME) as string;
-
-    const todo: Partial<Todo> = { 
-        title, 
-        description,  
-    };
-
-    const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
-    await fetch(`${baseUrl}/todos`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(todo),
-    });
 }
 
 export default TodoForm

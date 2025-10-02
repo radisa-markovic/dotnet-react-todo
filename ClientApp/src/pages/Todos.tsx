@@ -1,9 +1,30 @@
-import { useLoaderData } from "react-router";
 import TodosList from "../components/TodosList";
+import { useAuth } from "../contexts/AuthContext";
+import { useEffect, useState } from "react";
 
 export default function Todos()
 {
-  const { todos } = useLoaderData();
+  const { accessToken } = useAuth();
+  const [todos, setTodos] = useState([]);
+
+  useEffect(()=>{
+    async function loadTodos()
+    {
+      const todosResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/todos`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      return await todosResponse.json();
+    }
+    
+    loadTodos().then((todos) => {
+      setTodos(todos);
+    });
+  }, []);
 
   return (
     <section>
@@ -18,16 +39,4 @@ export default function Todos()
       }
     </section>
   )
-}
-
-export async function todosLoader()
-{
-  const todosResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/todos`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-  const todos = await todosResponse.json();
-  return { todos };
 }

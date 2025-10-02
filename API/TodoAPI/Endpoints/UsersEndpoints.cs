@@ -35,7 +35,10 @@ public static class UsersEndpoints
         .WithName("GetUserById")
         .WithTags("Users");
 
-        users.MapPost("/", async (CreateUserDto newUser, TodoContext dbContext) =>
+        users.MapPost("/", async (
+            CreateUserDto newUser,
+            TodoContext dbContext
+        ) =>
         {
             var user = new User
             {

@@ -11,13 +11,25 @@ public static class TodoEndpoints
     public static RouteGroupBuilder MapTodoEndpoints(this WebApplication app)
     {
         string GetTodoRoute = "GetTodoRoute";
-        
-        var todoRouteGroup = app.MapGroup("/api/v1/todos")
-            .WithParameterValidation();
 
-        todoRouteGroup.MapGet("/", async (TodoContext dbContext) =>
+        var todoRouteGroup = app.MapGroup("/api/v1/todos")
+            .WithParameterValidation()
+            .RequireAuthorization();
+
+        todoRouteGroup.MapGet("/", async (
+            TodoContext dbContext,
+            HttpContext httpContext
+        ) =>
         {
-            var todos = await dbContext.Todos.ToListAsync();
+            var username = httpContext.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(username))
+                return Results.Unauthorized();
+
+            var todos = await dbContext.Todos
+                .Where((todo) => todo.User.Username == username)
+                .ToListAsync();
+
             return Results.Ok(todos);
         });
 
@@ -27,21 +39,39 @@ public static class TodoEndpoints
             return todo is not null ? Results.Ok(todo) : Results.NotFound();
         }).WithName(GetTodoRoute);
 
-        todoRouteGroup.MapPost("/", async (CreateTodoDto todo, TodoContext dbContext) =>
+        todoRouteGroup.MapPost("/", async (
+            CreateTodoDto todo,
+            TodoContext dbContext,
+            HttpContext httpContext
+        ) =>
         {
+            var username = httpContext.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(username))
+                return Results.Unauthorized();
+
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user is null)
+                return Results.Unauthorized();
+
             Todo newTodo = new()
             {
                 Title = todo.Title,
                 Description = todo.Description,
                 IsCompleted = false,
                 CreatedAt = DateOnly.FromDateTime(DateTime.Now),
-                CompletedAt = null
+                CompletedAt = null,
+                UserId = user.Id
             };
 
             await dbContext.Todos.AddAsync(newTodo);
             await dbContext.SaveChangesAsync();
 
-            return Results.CreatedAtRoute(GetTodoRoute, new { id = newTodo.Id }, newTodo);
+            return Results.CreatedAtRoute(
+                GetTodoRoute,
+                new { id = newTodo.Id }, 
+                new { id = newTodo.Id, title = newTodo.Title }                
+            );
         });
 
         todoRouteGroup.MapPut("/{id}", async (
